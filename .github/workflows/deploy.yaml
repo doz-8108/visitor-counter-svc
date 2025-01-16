@@ -1,0 +1,62 @@
+name: Deploy to Azure VM
+
+# on:
+# workflow_dispatch:
+# push:
+#   branches:
+#     - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        run: |
+          docker buildx create --use
+          docker buildx build --platform linux/amd64 -t pakpannn/go-visitor-counter:latest --push .
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: SSH to Azure VM and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            if [ ! -d "go-visitor-counter" ]; then
+              git clone git@github.com:doz-8108/go-visitor-counter.git
+              cd go-visitor-counter
+            else
+              cd go-visitor-counter
+              git pull origin main
+            fi
+            cat <<EOF > .env
+              IP2LOCATION_API_KEY=${{ secrets.IP2LOCATION_API_KEY }}
+            EOF
+            ./init.sh
