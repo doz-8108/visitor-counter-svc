@@ -80,6 +80,12 @@ make run
   3. Executes a Lua script to calculate visitor counts using Redis HyperLogLog.
   4. Returns a map of visitor counts grouped by country code.
 
+### Running the Service
+
+To start the tests, run the following command:
+```bash
+make test
+```
 
 ## Logging
 
