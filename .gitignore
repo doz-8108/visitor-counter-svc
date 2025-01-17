@@ -46,7 +46,10 @@ node_modules/
 /build/
 
 # grpc files
-*.pb.go
+/pb/
 
 # mocks
 /mocks/
+
+# git submodules
+.gitmodules
